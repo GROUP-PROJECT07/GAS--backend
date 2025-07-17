@@ -95,3 +95,24 @@ This will deploy Firestore rules, Storage rules, and Cloud Functions if configur
 
 This project is maintained by the development team supporting the Ghana Audit Service. Use is restricted to official government or approved pilot use only unless otherwise stated.
 
+
+
+/correspondence/
+  - docID
+    - subject
+    - sender
+    - recipient
+    - date
+    - department
+    - status
+    - registryNumber
+    - fileURL
+    - createdBy
+
+/users/
+  - uid
+    - email
+    - role ("admin" | "user")
+    - department
+
+
