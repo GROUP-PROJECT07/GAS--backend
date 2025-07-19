@@ -1,0 +1,35 @@
+# === Node.js Dependencies ===
+node_modules/
+package-lock.json
+
+# === Environment Variables ===
+.env
+
+# === Log files ===
+*.log
+npm-debug.log*
+
+# === OS/System Files ===
+.DS_Store
+Thumbs.db
+
+# === Uploaded Files ===
+uploads/
+
+# === VS Code Settings ===
+.vscode/
+
+# === Supabase generated files ===
+.supabase/
+.supabase/config.toml
+
+# === Edge function build outputs ===
+*.tsbuildinfo
+
+# === Optional cache files ===
+.cache/
+dist/
+build/
+.tmp/
+.temp/
+
