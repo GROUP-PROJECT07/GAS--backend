@@ -1,4 +1,4 @@
-# GAS Backend (Supabase Version)
+# GAS Backend 
 
 This is the Supabase-based backend for the Ghana Audit Service Correspondence Management System.
 
