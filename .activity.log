@@ -36,3 +36,4 @@
 [Entry #10] - Fix incorrect sender name in entry
 [Entry #11] - Refactor registry matching algorithm
 [Entry #12] - Note override of file access control
+[Entry #13] - Fix incorrect archive tag
