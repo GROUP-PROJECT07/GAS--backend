@@ -41,3 +41,4 @@
 [Entry #15] - Log security token usage
 [Entry #16] - Improve user action traceability
 [Entry #17] - Log recipient acknowledgment
+[Entry #18] - Refactor audit trail schema
