@@ -34,3 +34,4 @@
 [Entry #8] - Register document view from admin
 [Entry #9] - Confirm departmental ownership of files
 [Entry #10] - Fix incorrect sender name in entry
+[Entry #11] - Refactor registry matching algorithm
