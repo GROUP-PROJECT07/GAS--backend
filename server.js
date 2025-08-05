@@ -9,7 +9,7 @@ const port = process.env.PORT || 3000;
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_ANON_KEY // ✅ Use the correct key
+  process.env.SUPABASE_ANON_KEY 
 );
 
 // Setup multer for memory storage 
@@ -17,7 +17,7 @@ const upload = multer({ storage: multer.memoryStorage() });
 
 // Root route
 app.get('/', (req, res) => {
-  res.send('GAS Backend is running 🚀');
+  res.send('GAS Backend is running');
 });
 
 // POST endpoint to upload file
