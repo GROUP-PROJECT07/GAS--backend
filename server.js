@@ -7,13 +7,11 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 3000;
 
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
-
-// Setup multer for memory storage 
 const upload = multer({ storage: multer.memoryStorage() });
 
-// POST endpoint to upload file
+
 app.post('/upload', upload.single('file'), async (req, res) => {
   const file = req.file;
 
@@ -25,11 +23,12 @@ app.post('/upload', upload.single('file'), async (req, res) => {
     .from('correspondence-files')
     .upload(filePath, file.buffer, {
       contentType: file.mimetype,
+      upsert: true, 
     });
 
   if (error) {
     console.error('Upload error:', error);
-    return res.status(500).json({ error });
+    return res.status(500).json({ error: error.message });
   }
 
   const { data: publicUrlData } = supabase
@@ -44,7 +43,6 @@ app.post('/upload', upload.single('file'), async (req, res) => {
   });
 });
 
-// Start server
 app.listen(port, () => {
   console.log(` Server running on http://localhost:${port}`);
 });
