@@ -10,6 +10,7 @@ const app = express();
 
 const allowedOrigins = [
   'http://localhost:3000',
+  'https://preview-frontend-for-cms-kzmowcx6d5gl4sf73iox.vusercontent.net',
   'https://gas-frontend-2-9j.vercel.app',
 ];
 
