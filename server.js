@@ -15,10 +15,8 @@ const supabase = createClient(
 
 app.use(express.json());
 
-// Setup multer for memory storage
 const upload = multer({ storage: multer.memoryStorage() });
 
-// Root route
 app.get('/', (req, res) => {
   res.send('GAS Backend is running');
 });
@@ -48,7 +46,6 @@ app.post('/upload', upload.single('file'), async (req, res) => {
   });
 });
 
-// Example DB query endpoint
 app.get('/correspondence', async (req, res) => {
   const { data, error } = await supabase
     .from('correspondence')
@@ -59,7 +56,29 @@ app.get('/correspondence', async (req, res) => {
   res.status(200).json(data);
 });
 
-// Start server
+app.post('/api/auth/post-signup', async (req, res) => {
+  const user = req.body;
+
+  console.log('New user signed up:', user);
+
+  const { data, error } = await supabase
+    .from('correspondence_users')
+    .insert([
+      {
+        id: user.id,
+        email: user.email,
+        created_at: new Date()
+      }
+    ]);
+
+  if (error) {
+    console.error('Error inserting new user:', error);
+    return res.status(500).json({ error: error.message });
+  }
+
+  res.status(200).json({ message: 'User recorded successfully', user: data });
+});
+
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });
