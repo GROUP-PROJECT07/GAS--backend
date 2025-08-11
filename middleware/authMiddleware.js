@@ -1,12 +1,27 @@
-const supabase = require('../supabase');
+const supabase = require('../supabase'); 
 
 exports.requireUser = async (req, res, next) => {
-  const token = req.headers.authorization?.split(' ')[1];
-  if (!token) return res.status(403).json({ error: 'Missing token' });
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+      return res.status(401).json({ error: 'Authorization header missing' });
+    }
 
-  const { data: { user }, error } = await supabase.auth.getUser(token);
-  if (error || !user) return res.status(401).json({ error: 'Invalid token' });
+    const token = authHeader.split(' ')[1];
+    if (!token) {
+      return res.status(401).json({ error: 'Bearer token missing' });
+    }
 
-  req.user = user;
-  next();
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+    if (error || !user) {
+      return res.status(401).json({ error: 'Invalid or expired token' });
+    }
+
+    req.user = user;
+
+    next();
+  } catch (err) {
+    console.error('Authentication error:', err);
+    return res.status(500).json({ error: 'Internal server error during authentication' });
+  }
 };
