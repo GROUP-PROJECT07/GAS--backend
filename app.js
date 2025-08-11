@@ -11,6 +11,7 @@ const app = express();
 const allowedOrigins = [
   'http://localhost:3000',
   'https://preview-frontend-for-cms-kzmowcx6d5gl4sf73iox.vusercontent.net',
+  'https://super-duper-space-acorn-pjg79gjg6gjjcr474.github.dev/pf-signin?id=puzzled-horse-gkxttx7&cluster=uks1&name=super-duper-space-acorn-pjg79gjg6gjjcr474&port=3000&pb=https%3A%2F%2Fsuper-duper-space-acorn-pjg79gjg6gjjcr474-3000.app.github.dev%2Fauth%2Fpostback%2Ftunnel%3Ftunnel%3D1&cid=a7b97711-ed22-47ab-b092-9adf5e90b344',
   'https://gas-frontend-2-9j.vercel.app',
 ];
 
