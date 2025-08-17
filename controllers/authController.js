@@ -1,40 +1,10 @@
-const supabase = require('../supabase');
+const { createClient } = require('@supabase/supabase-js');
+require('dotenv').config();
 
-exports.register = async (req, res) => {
-  const { email, password, role = 'user', department = null } = req.body;
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-  });
-
-  if (error) {
-    return res.status(400).json({ error: error.message });
-  }
-
-  const { error: profileError } = await supabase
-    .from('user_profiles')
-    .insert([
-      {
-        id: data.user.id,
-        email,
-        role,
-        department,
-      },
-    ]);
-
-  if (profileError) {
-    await supabase.auth.admin.deleteUser(data.user.id);
-    return res.status(500).json({ error: profileError.message });
-  }
-
-  res.status(201).json({
-    user: data.user,
-    message: 'Registration successful, please check your email to confirm.',
-  });
-};
-
-exports.login = async (req, res) => {
+// Login
+const login = async (req, res) => {
   const { email, password } = req.body;
 
   const { data, error } = await supabase.auth.signInWithPassword({
@@ -42,7 +12,46 @@ exports.login = async (req, res) => {
     password,
   });
 
-  if (error) return res.status(401).json({ error: error.message });
+  if (error) return res.status(400).json({ error: error.message });
 
-  res.json({ session: data.session, user: data.user });
+  res.json({ user: data.user, session: data.session });
+};
+
+// Signup
+const signup = async (req, res) => {
+  const { email, password } = req.body;
+
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+  });
+
+  if (error) return res.status(400).json({ error: error.message });
+
+  res.json({ user: data.user });
+};
+
+// Logout
+const logout = async (req, res) => {
+  const { error } = await supabase.auth.signOut();
+
+  if (error) return res.status(400).json({ error: error.message });
+
+  res.json({ message: 'Logged out successfully' });
+};
+
+// Get current user
+const getUser = async (req, res) => {
+  const { data: { user }, error } = await supabase.auth.getUser();
+
+  if (error) return res.status(400).json({ error: error.message });
+
+  res.json({ user });
+};
+
+module.exports = {
+  login,
+  signup,
+  logout,
+  getUser,
 };
