@@ -7,7 +7,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const app = express();
-const port = process.env.PORT || 5000; 
+const port = process.env.PORT || 5000;
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -16,9 +16,9 @@ const supabase = createClient(
 
 app.use(cors({
   origin: [
-    "http://localhost:3000", 
-    "https://gas-frontend-zeta.vercel.app", 
-    "https://gas-frontend-9wae.vercel.app" 
+    "http://localhost:3000",
+    "https://gas-frontend-zeta.vercel.app",
+    "https://gas-frontend-9wae.vercel.app"
   ],
   credentials: true
 }));
@@ -67,27 +67,38 @@ app.get('/correspondence', async (req, res) => {
   res.status(200).json(data);
 });
 
-/* ------------------ Record new user after signup ------------------ */
+/* ------------------ Auth Hook: Record new user ------------------ */
 app.post('/api/auth/post-signup', async (req, res) => {
-  const user = req.body;
-  console.log('New user signed up:', user);
+  try {
+    console.log("Auth hook payload:", req.body);
 
-  const { data, error } = await supabase
-    .from('correspondence_users')
-    .insert([
-      {
-        id: user.id,
-        email: user.email,
-        created_at: new Date()
-      }
-    ]);
+    const { user, event } = req.body;
 
-  if (error) {
-    console.error('Error inserting new user:', error);
-    return res.status(500).json({ error: error.message });
+    if (!user) {
+      return res.status(400).json({ error: "No user object in payload" });
+    }
+
+    const { data, error } = await supabase
+      .from('users') // ✅ match your schema (not correspondence_users)
+      .insert([
+        {
+          id: user.id,
+          email: user.email,
+          name: user.user_metadata?.name || "Unnamed User",
+          created_at: new Date()
+        }
+      ]);
+
+    if (error) {
+      console.error("Error inserting new user:", error);
+      return res.status(500).json({ error: error.message });
+    }
+
+    res.status(200).json({ message: "User recorded successfully", user: data });
+  } catch (err) {
+    console.error("Post-signup hook error:", err);
+    res.status(500).json({ error: "Internal server error" });
   }
-
-  res.status(200).json({ message: 'User recorded successfully', user: data });
 });
 
 /* ------------------ Auth: Login ------------------ */
@@ -136,5 +147,5 @@ app.get('/me', requireAuth, (req, res) => {
 });
 
 app.listen(port, () => {
-  console.log(` Server running on http://localhost:${port}`);
+  console.log(`Server running on http://localhost:${port}`);
 });
