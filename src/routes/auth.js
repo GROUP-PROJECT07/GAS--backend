@@ -15,6 +15,11 @@ const supabase = createClient(
 
 router.post("/post-signup", async (req, res) => {
   try {
+    // Verify Supabase hook secret
+    if (req.headers.authorization !== `Bearer ${process.env.SUPABASE_HOOK_SECRET}`) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
     const { user, type } = req.body; // Supabase sends event payload
     console.log("Auth hook payload:", req.body);
 
@@ -36,9 +41,6 @@ router.post("/post-signup", async (req, res) => {
       console.error("Error inserting user:", error);
       return res.status(500).json({ error: "Failed to insert user" });
     }
-
-    // Optional: trigger welcome email (via Nodemailer, Resend, etc.)
-    // await sendWelcomeEmail(user.email);
 
     res.status(200).json({ message: "Post-signup logic executed", userId: user.id });
   } catch (err) {
