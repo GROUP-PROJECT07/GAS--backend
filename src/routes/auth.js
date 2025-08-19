@@ -11,8 +11,6 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-const SUPABASE_HOOK_SECRET = process.env.SUPABASE_HOOK_SECRET || "";
-
 router.get("/", (req, res) => {
   res.json({ status: "ok", service: "GAS Backend running" });
 });
@@ -21,15 +19,6 @@ router.post("/post-signup", async (req, res) => {
   try {
     console.log("Incoming post-signup hook");
     console.log("Authorization header:", req.headers.authorization);
-
-    const authHeader = req.headers.authorization || "";
-    const token = authHeader.startsWith("Bearer ")
-      ? authHeader.split(" ")[1]
-      : authHeader;
-
-    if (!token || token !== SUPABASE_HOOK_SECRET) {
-      return res.status(401).json({ error: "Unauthorized request" });
-    }
 
     const { user } = req.body;
     if (!user || !user.id) {
@@ -48,7 +37,7 @@ router.post("/post-signup", async (req, res) => {
           created_at: new Date()
         }
       ],
-      { onConflict: ["id"] } // ensures existing users are not duplicated
+      { onConflict: ["id"] }
     );
 
     if (error) {
