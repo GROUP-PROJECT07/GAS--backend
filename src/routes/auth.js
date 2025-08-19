@@ -1,4 +1,3 @@
-// src/routes/auth.js
 import express from "express";
 import { createClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
@@ -7,7 +6,6 @@ dotenv.config();
 
 const router = express.Router();
 
-// Supabase service role client (only use on backend!)
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -15,25 +13,23 @@ const supabase = createClient(
 
 router.post("/post-signup", async (req, res) => {
   try {
-    // Verify Supabase hook secret
     if (req.headers.authorization !== `Bearer ${process.env.SUPABASE_HOOK_SECRET}`) {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { user, type } = req.body; // Supabase sends event payload
+    const { user, type } = req.body;
     console.log("Auth hook payload:", req.body);
 
     if (!user || !user.id) {
       return res.status(400).json({ error: "Invalid payload: no user.id" });
     }
 
-    // Example custom logic: Insert new user into `users` table
     const { error } = await supabase.from("users").insert([
       {
-        id: user.id, // same UUID as auth.users
+        id: user.id, 
         email: user.email,
-        role: "user", // default role
-        department: null, // set later by admin
+        role: "user", 
+        department: null,
       },
     ]);
 
