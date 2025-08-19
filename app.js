@@ -25,12 +25,10 @@ app.use(cors({
   credentials: true
 }));
 
-// Create Supabase client with anon key
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
 app.use(express.json());
 
-// Middleware to extract user from Authorization header
 async function authenticate(req, res, next) {
   const token = req.headers.authorization?.split(' ')[1];
   if (!token) return res.status(401).json({ error: 'Unauthorized: no token' });
@@ -42,15 +40,12 @@ async function authenticate(req, res, next) {
   next();
 }
 
-// File upload setup
 const upload = multer({ storage: multer.memoryStorage() });
 
-// Test route
 app.get('/', (req, res) => {
   res.send('GAS Backend is running');
 });
 
-// Protected route example: get user profile
 app.get('/profile', authenticate, async (req, res) => {
   const { data, error } = await supabase
     .from('user_profiles')
@@ -62,7 +57,6 @@ app.get('/profile', authenticate, async (req, res) => {
   res.json(data);
 });
 
-// Upload correspondence file and create correspondence record
 app.post('/correspondences', authenticate, upload.single('file'), async (req, res) => {
   const file = req.file;
   if (!file) return res.status(400).json({ error: 'No file uploaded' });
@@ -98,7 +92,6 @@ app.post('/correspondences', authenticate, upload.single('file'), async (req, re
   res.status(201).json({ message: 'Correspondence created', data });
 });
 
-// List correspondences for authenticated user
 app.get('/correspondences', authenticate, async (req, res) => {
   const { data, error } = await supabase
     .from('correspondences')

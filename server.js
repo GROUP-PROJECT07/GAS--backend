@@ -71,7 +71,6 @@ app.get('/correspondence', async (req, res) => {
 app.post('/api/auth/post-signup', async (req, res) => {
   console.log("Incoming post-signup hook");
 
-  // ✅ Verify hook secret from Supabase
   if (req.headers.authorization !== `Bearer ${process.env.SUPABASE_HOOK_SECRET}`) {
     console.error("Unauthorized hook request");
     return res.status(401).json({ error: "Unauthorized" });

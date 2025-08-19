@@ -9,11 +9,8 @@ if (!supabaseUrl || !supabaseAnonKey || !supabaseServiceRoleKey || !supabaseDbUr
   throw new Error("One or more Supabase environment variables are missing!");
 }
 
-// Default client (for public operations)
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-// Secure client (for server-side operations)
 export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey);
 
-// Database URL (can be used if you connect directly to Postgres with a library like pg)
 export const databaseUrl = supabaseDbUrl;

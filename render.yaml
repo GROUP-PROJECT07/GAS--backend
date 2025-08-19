@@ -2,7 +2,7 @@ services:
   - type: web
     name: gas-backend
     env: node
-    region: oregon # or choose a region close to you
+    region: oregon 
     plan: free
     buildCommand: "npm install"
     startCommand: "node server.js"
