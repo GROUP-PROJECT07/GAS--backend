@@ -1,4 +1,3 @@
-// src/routes/auth.js
 import express from "express";
 import dotenv from "dotenv";
 import { createClient } from "@supabase/supabase-js";
@@ -20,8 +19,15 @@ router.get("/", (req, res) => {
 
 router.post("/post-signup", async (req, res) => {
   try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || authHeader !== `Bearer ${SUPABASE_HOOK_SECRET}`) {
+    console.log("Incoming post-signup hook");
+    console.log("Authorization header:", req.headers.authorization);
+
+    const authHeader = req.headers.authorization || "";
+    const token = authHeader.startsWith("Bearer ")
+      ? authHeader.split(" ")[1]
+      : authHeader;
+
+    if (!token || token !== SUPABASE_HOOK_SECRET) {
       return res.status(401).json({ error: "Unauthorized request" });
     }
 
