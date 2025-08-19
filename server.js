@@ -28,7 +28,7 @@ const upload = multer({ storage: multer.memoryStorage() });
 
 /* ------------------ Health check ------------------ */
 app.get('/', (req, res) => {
-  res.send('GAS Backend is running ');
+  res.send('GAS Backend is running');
 });
 
 /* ------------------ File upload ------------------ */
@@ -69,31 +69,40 @@ app.get('/correspondence', async (req, res) => {
 
 /* ------------------ Auth Hook: Record new user ------------------ */
 app.post('/api/auth/post-signup', async (req, res) => {
+  console.log("Incoming post-signup hook");
+
+  // ✅ Verify hook secret from Supabase
+  if (req.headers.authorization !== `Bearer ${process.env.SUPABASE_HOOK_SECRET}`) {
+    console.error("Unauthorized hook request");
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+
   try {
     console.log("Auth hook payload:", req.body);
-
-    const { user, event } = req.body;
+    const { user } = req.body;
 
     if (!user) {
       return res.status(400).json({ error: "No user object in payload" });
     }
 
     const { data, error } = await supabase
-      .from('users') // ✅ match your schema (not correspondence_users)
+      .from('users')
       .insert([
         {
           id: user.id,
           email: user.email,
-          name: user.user_metadata?.name || "Unnamed User",
+          name: user.user_metadata?.full_name || "Unnamed User",
           created_at: new Date()
         }
-      ]);
+      ])
+      .select();
 
     if (error) {
       console.error("Error inserting new user:", error);
       return res.status(500).json({ error: error.message });
     }
 
+    console.log("User inserted:", data);
     res.status(200).json({ message: "User recorded successfully", user: data });
   } catch (err) {
     console.error("Post-signup hook error:", err);
@@ -114,7 +123,7 @@ app.post('/auth/login', async (req, res) => {
 
   res.json({
     user: data.user,
-    session: data.session, // contains access_token + refresh_token
+    session: data.session,
   });
 });
 
