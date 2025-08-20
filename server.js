@@ -23,6 +23,7 @@ app.use(cors({
   ],
   credentials: true
 }));
+
 app.use(express.json());
 
 const upload = multer({ storage: multer.memoryStorage() });
@@ -30,101 +31,6 @@ const upload = multer({ storage: multer.memoryStorage() });
 /* ------------------ Health check ------------------ */
 app.get('/', (req, res) => {
   res.send('GAS Backend is running');
-});
-
-/* ------------------ File upload ------------------ */
-app.post('/upload', upload.single('file'), async (req, res) => {
-  const file = req.file;
-  if (!file) return res.status(400).json({ error: 'No file uploaded' });
-
-  const filePath = `uploads/${Date.now()}-${file.originalname}`;
-
-  const { error } = await supabase.storage
-    .from('correspondence-files')
-    .upload(filePath, file.buffer, { contentType: file.mimetype });
-
-  if (error) return res.status(500).json({ error: error.message });
-
-  const { data: publicUrlData } = supabase
-    .storage
-    .from('correspondence-files')
-    .getPublicUrl(filePath);
-
-  res.status(200).json({
-    message: 'Upload successful',
-    filePath,
-    publicUrl: publicUrlData?.publicUrl,
-  });
-});
-
-/* ------------------ Get correspondence ------------------ */
-app.get('/correspondence', async (req, res) => {
-  const { data, error } = await supabase
-    .from('correspondence')
-    .select('*');
-
-  if (error) return res.status(500).json({ error: error.message });
-
-  res.status(200).json(data);
-});
-
-/* ------------------ Auth Hook: Record new user ------------------ */
-app.post('/api/auth/post-signup', async (req, res) => {
-  console.log("Incoming post-signup hook");
-
-  if (req.headers.authorization !== `Bearer ${process.env.SUPABASE_HOOK_SECRET}`) {
-    console.error("Unauthorized hook request");
-    return res.status(401).json({ error: "Unauthorized" });
-  }
-
-  try {
-    console.log("Auth hook payload:", req.body);
-    const { user } = req.body;
-
-    if (!user) {
-      return res.status(400).json({ error: "No user object in payload" });
-    }
-
-    const { data, error } = await supabase
-      .from('users')
-      .insert([
-        {
-          id: user.id,
-          email: user.email,
-          name: user.user_metadata?.full_name || "Unnamed User",
-          created_at: new Date()
-        }
-      ])
-      .select();
-
-    if (error) {
-      console.error("Error inserting new user:", error);
-      return res.status(500).json({ error: error.message });
-    }
-
-    console.log("User inserted:", data);
-    res.status(200).json({ message: "User recorded successfully", user: data });
-  } catch (err) {
-    console.error("Post-signup hook error:", err);
-    res.status(500).json({ error: "Internal server error" });
-  }
-});
-
-/* ------------------ Auth: Login ------------------ */
-app.post('/auth/login', async (req, res) => {
-  const { email, password } = req.body;
-
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password
-  });
-
-  if (error) return res.status(400).json({ error: error.message });
-
-  res.json({
-    user: data.user,
-    session: data.session,
-  });
 });
 
 /* ------------------ Middleware: Require Auth ------------------ */
@@ -149,6 +55,111 @@ const requireAuth = async (req, res, next) => {
     res.status(500).json({ error: 'Internal server error during authentication' });
   }
 };
+
+/* ------------------ POST: Save Correspondence ------------------ */
+app.post('/correspondence', requireAuth, upload.single('file'), async (req, res) => {
+  try {
+    const {
+      subject,
+      sender,
+      recipient,
+      date,
+      department,
+      status,
+      registry_number
+    } = req.body;
+
+    if (!subject || !sender || !recipient || !date) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    let fileUrl = null;
+    if (req.file) {
+      const filePath = `uploads/${Date.now()}-${req.file.originalname}`;
+      const { error: uploadError } = await supabase.storage
+        .from('correspondence-files')
+        .upload(filePath, req.file.buffer, { contentType: req.file.mimetype });
+
+      if (uploadError) {
+        console.error('File upload error:', uploadError);
+        return res.status(500).json({ error: uploadError.message });
+      }
+
+      const { data: publicUrlData } = supabase
+        .storage
+        .from('correspondence-files')
+        .getPublicUrl(filePath);
+
+      fileUrl = publicUrlData?.publicUrl;
+    }
+
+    const { data, error } = await supabase
+      .from('correspondence')
+      .insert([
+        {
+          subject,
+          sender,
+          recipient,
+          date,
+          department,
+          status,
+          registry_number,
+          file_url: fileUrl,
+          created_by: req.user.id
+        }
+      ])
+      .select();
+
+    if (error) {
+      console.error('Error saving correspondence:', error);
+      return res.status(500).json({ error: error.message });
+    }
+
+    res.status(200).json({ message: 'Correspondence saved successfully', data });
+  } catch (err) {
+    console.error('POST /correspondence error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+/* ------------------ GET: All Correspondence ------------------ */
+app.get('/correspondence', requireAuth, async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('correspondence')
+      .select('*')
+      .order('date', { ascending: false });
+
+    if (error) return res.status(500).json({ error: error.message });
+
+    res.status(200).json(data);
+  } catch (err) {
+    console.error('GET /correspondence error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+/* ------------------ Auth: Login ------------------ */
+app.post('/auth/login', async (req, res) => {
+  const { email, password } = req.body;
+
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
+
+    if (error) return res.status(401).json({ error: error.message });
+
+    res.json({
+      user: data.user,
+      session: data.session
+    });
+  } catch (err) {
+    console.error('Login error:', err);
+    res.status(500).json({ error: 'Internal server error during login' });
+  }
+});
 
 /* ------------------ Protected route: /me ------------------ */
 app.get('/me', requireAuth, (req, res) => {
