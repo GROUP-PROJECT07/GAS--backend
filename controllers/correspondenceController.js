@@ -1,15 +1,14 @@
 const supabase = require('../supabase');
-const fs = require('fs');
-const path = require('path');
 const { uploadToStorage } = require('../utils/storage');
 
 exports.createCorrespondence = async (req, res) => {
   const { subject, sender, recipient, date, department } = req.body;
   const file = req.file;
 
-  const filePath = path.join(__dirname, '..', file.path);
-  const fileUpload = await uploadToStorage(filePath, file.originalname);
+  if (!file) return res.status(400).json({ error: 'No file uploaded' });
 
+  // Upload using buffer (memoryStorage)
+  const fileUpload = await uploadToStorage(file.buffer, file.originalname);
   if (fileUpload.error) return res.status(500).json({ error: fileUpload.error });
 
   const registryNumber = `GAS-${Date.now()}`;
@@ -24,12 +23,12 @@ exports.createCorrespondence = async (req, res) => {
       department,
       registry_number: registryNumber,
       file_url: fileUpload.url,
-      created_by: req.user.id
-    }]);
+      created_by: req.user.id // RLS-safe
+    }])
+    .select();
 
   if (error) return res.status(500).json({ error: error.message });
 
-  fs.unlinkSync(filePath); // delete local temp file
   res.json({ message: 'Correspondence saved', data });
 };
 
