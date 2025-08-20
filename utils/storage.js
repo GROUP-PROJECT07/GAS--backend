@@ -1,21 +1,21 @@
-const fs = require('fs');
+// utils/storage.js
 const supabase = require('../supabase');
 
-exports.uploadToStorage = async (filePath, filename) => {
-  const file = fs.readFileSync(filePath);
-  const { data, error } = await supabase.storage
+async function uploadToStorage(fileBuffer, filename) {
+  const filePath = `correspondence-files/${Date.now()}-${filename}`;
+
+  const { error } = await supabase.storage
     .from('correspondence-files')
-    .upload(filename, file, {
-      contentType: 'application/octet-stream',
-      upsert: true
-    });
+    .upload(filePath, fileBuffer, { contentType: 'application/octet-stream' });
 
-  if (error) return { error };
+  if (error) return { error: error.message };
 
-  const { data: publicURL } = supabase
+  const { data: publicUrlData } = supabase
     .storage
     .from('correspondence-files')
-    .getPublicUrl(filename);
+    .getPublicUrl(filePath);
 
-  return { url: publicURL.publicUrl };
-};
+  return { url: publicUrlData.publicUrl };
+}
+
+module.exports = { uploadToStorage };
