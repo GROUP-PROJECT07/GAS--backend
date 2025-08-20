@@ -18,7 +18,8 @@ app.use(cors({
   origin: [
     "http://localhost:3000",
     "https://gas-frontend-zeta.vercel.app",
-    "https://gas-frontend-9wae.vercel.app"
+    "https://gas-frontend-9wae.vercel.app",
+    "https://gas-frontend-v2.vercel.app"
   ],
   credentials: true
 }));
