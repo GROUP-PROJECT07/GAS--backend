@@ -78,7 +78,7 @@ app.post('/correspondence', requireAuth, upload.single('file'), async (req, res)
     if (req.file) {
       const filePath = `uploads/${Date.now()}-${req.file.originalname}`;
       const { error: uploadError } = await supabase.storage
-        .from('correspondence-files')
+        .from('gas_correspondence') // <-- updated bucket name
         .upload(filePath, req.file.buffer, { contentType: req.file.mimetype });
 
       if (uploadError) {
@@ -88,7 +88,7 @@ app.post('/correspondence', requireAuth, upload.single('file'), async (req, res)
 
       const { data: publicUrlData } = supabase
         .storage
-        .from('correspondence-files')
+        .from('gas_correspondence') // <-- updated bucket name
         .getPublicUrl(filePath);
 
       fileUrl = publicUrlData?.publicUrl;
