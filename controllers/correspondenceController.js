@@ -1,60 +1,91 @@
 const supabase = require('../supabase');
 const { uploadToStorage } = require('../utils/storage');
 
+/**
+ * Create a new correspondence
+ * Supports single or multiple file uploads
+ */
 exports.createCorrespondence = async (req, res) => {
-  const { subject, sender, recipient, date, department } = req.body;
-  const file = req.file;
+  try {
+    const { subject, sender, recipient, date, department } = req.body;
+    const files = req.files || []; // multer memoryStorage supports multiple files
 
-  if (!file) return res.status(400).json({ error: 'No file uploaded' });
+    if (!subject || !sender || !recipient) {
+      return res.status(400).json({ error: 'Subject, sender, and recipient are required' });
+    }
 
-  // Upload using buffer (memoryStorage)
-  const fileUpload = await uploadToStorage(file.buffer, file.originalname);
-  if (fileUpload.error) return res.status(500).json({ error: fileUpload.error });
+    // Upload all files and collect URLs
+    const uploadedFiles = [];
+    for (const file of files) {
+      const result = await uploadToStorage(file.buffer, file.originalname);
+      if (result.error) return res.status(500).json({ error: result.error });
+      uploadedFiles.push({ name: file.originalname, url: result.url });
+    }
 
-  const registryNumber = `GAS-${Date.now()}`;
+    const registryNumber = `GAS-${Date.now()}`;
 
-  const { data, error } = await supabase
-    .from('correspondence')
-    .insert([{
-      subject,
-      sender,
-      recipient,
-      date,
-      department,
-      registry_number: registryNumber,
-      file_url: fileUpload.url,
-      created_by: req.user.id // RLS-safe
-    }])
-    .select();
+    const { data, error } = await supabase
+      .from('correspondence')
+      .insert([{
+        subject,
+        sender,
+        recipient,
+        date,
+        department,
+        registry_number: registryNumber,
+        attachments: uploadedFiles, // store array of {name, url}
+        created_by: req.user.id,
+      }])
+      .select();
 
-  if (error) return res.status(500).json({ error: error.message });
+    if (error) return res.status(500).json({ error: error.message });
 
-  res.json({ message: 'Correspondence saved', data });
+    res.json({ message: 'Correspondence saved', data });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 };
 
+/**
+ * Get dashboard data for the logged-in user
+ */
 exports.getUserDashboard = async (req, res) => {
-  const { data, error } = await supabase
-    .from('correspondence')
-    .select('*')
-    .eq('created_by', req.user.id);
+  try {
+    const { data, error } = await supabase
+      .from('correspondence')
+      .select('*')
+      .eq('created_by', req.user.id);
 
-  if (error) return res.status(500).json({ error: error.message });
-  res.json(data);
+    if (error) return res.status(500).json({ error: error.message });
+
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 };
 
+/**
+ * Get all correspondence for admins
+ */
 exports.getAdminDashboard = async (req, res) => {
-  const { data: userData } = await supabase
-    .from('users')
-    .select('role')
-    .eq('id', req.user.id)
-    .single();
+  try {
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', req.user.id)
+      .single();
 
-  if (userData?.role !== 'admin') return res.status(403).json({ error: 'Unauthorized' });
+    if (userError) return res.status(500).json({ error: userError.message });
+    if (userData?.role !== 'admin') return res.status(403).json({ error: 'Unauthorized' });
 
-  const { data, error } = await supabase
-    .from('correspondence')
-    .select('*');
+    const { data, error } = await supabase
+      .from('correspondence')
+      .select('*');
 
-  if (error) return res.status(500).json({ error: error.message });
-  res.json(data);
+    if (error) return res.status(500).json({ error: error.message });
+
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 };
