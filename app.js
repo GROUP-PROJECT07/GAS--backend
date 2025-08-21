@@ -11,7 +11,7 @@ const port = process.env.PORT || 3000;
 
 const allowedOrigins = [
   'https://gas-frontend-zeta.vercel.app',
-  'https://gas-frontend-9wae.vercel.app'
+  'https://gas-frontend-v2.vercel.app'
 ];
 
 app.use(cors({
