@@ -11,7 +11,8 @@ const port = process.env.PORT || 3000;
 
 const allowedOrigins = [
   'https://gas-frontend-zeta.vercel.app',
-  'https://gas-frontend-v2.vercel.app'
+  'https://gas-frontend-v2.vercel.app',
+  'https://www.gascorrespondence.app'
 ];
 
 app.use(cors({
@@ -61,15 +62,15 @@ app.post('/correspondences', authenticate, upload.single('file'), async (req, re
   const file = req.file;
   if (!file) return res.status(400).json({ error: 'No file uploaded' });
 
-  const filePath = `correspondence-files/${Date.now()}-${file.originalname}`;
+  const filePath = `uploads/${Date.now()}-${file.originalname}`;
 
   const { error: uploadError } = await supabase.storage
-    .from('correspondence-files')
+    .from('gas_correspondence') // <-- updated bucket name
     .upload(filePath, file.buffer, { contentType: file.mimetype });
 
   if (uploadError) return res.status(500).json({ error: uploadError.message });
 
-  const { data: { publicUrl } } = supabase.storage.from('correspondence-files').getPublicUrl(filePath);
+  const { data: { publicUrl } } = supabase.storage.from('gas_correspondence').getPublicUrl(filePath); // <-- updated bucket name
 
   const { subject, sender, recipient, date_received, department, status, registry_number } = req.body;
 
